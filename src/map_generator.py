@@ -14,9 +14,9 @@ def generate_map(size=10):
         size (int): Number of rows/columns.
 
     """
-    lake = np.random.choice(["F", "H"], (size, size), p=[0.93, 0.07])
+    lake = np.random.choice(["F", "H"], (size, size), p=[0.65, 0.35])
     lake[0, 0] = "S"
-    lake[size // 2, size // 2] = "G"
+    lake[size-1, size-1] = "G"
 
     # save results to file
     file = get_abspath('frozen_lake_{}.txt'.format(size), 'data')

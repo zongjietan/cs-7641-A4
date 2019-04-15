@@ -1,6 +1,6 @@
-# CS7641 Assignment 4
-# Keun-Hwi Lee (klee754)
-# Fall 18
+#CS7641 Assignment 4
+#Zongjie Tan (ztan73)
+#Spring 19
 
 ## Requirements
 * Python 3.5 or greater
@@ -11,9 +11,9 @@
   * Run python3 q_learning.py
 
 ## Code at
-https://github.com/QuinnLee/cs-7641-A4
+https://github.com/zongjietan/cs-7641-A4.git
 
 ## Thanks to:
-  * https://github.com/openai/gym/blob/master/gym/envs/toy_text/frozen_lake.py
-  * Federico Ciner (https://github.com/FedericoCiner)
-  * And everyone in the Slack channel
+ * https://github.com/openai/gym/blob/master/gym/envs/toy_text/frozen_lake.py
+ * Federico Ciner (https://github.com/FedericoCiner)
+ * Keun-Hwi Lee (https://github.com/QuinnLee/cs-7641-A4)

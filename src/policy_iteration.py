@@ -9,32 +9,56 @@ from helpers import evaluate_rewards_and_transitions
 from plot_results import plot_grid
 from gym.envs.registration import register
 
-# register custom Frozen Lake 25x25 map
-SIZE = 50
+# register custom Frozen Lake 5x5 map
+SIZE = 5
 MAP_FILE = get_abspath('frozen_lake_{}.txt'.format(SIZE), 'data')
 with open(MAP_FILE) as f:
     MAP_DATA = f.readlines()
-MAP50 = [x.strip() for x in MAP_DATA]
+MAP5 = [x.strip() for x in MAP_DATA]
+
+# register custom Frozen Lake 20x20 map
+SIZE = 20
+MAP_FILE = get_abspath('frozen_lake_{}.txt'.format(SIZE), 'data')
+with open(MAP_FILE) as f:
+    MAP_DATA = f.readlines()
+MAP20 = [x.strip() for x in MAP_DATA]
 
 register(
-    id='FrozenLake8x8-v1',
+    id='FrozenLake5x5-v1',
     entry_point='frozen_lake_custom:FrozenLakeCustom',
-    max_episode_steps=5000,
+    max_episode_steps=400,
     reward_threshold=0.99,  # optimum = 1
-    kwargs={'map_name': '8x8', 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
+    kwargs={'desc': MAP5, 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
 )
 
 register(
-    id='FrozenLake50x50-v1',
+    id='FrozenLake20x20-v1',
     entry_point='frozen_lake_custom:FrozenLakeCustom',
     max_episode_steps=5000,
     reward_threshold=0.99,  # optimum = 1
-    kwargs={'desc': MAP50, 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
+    kwargs={'desc': MAP20, 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
+)
+
+register(
+    id='FrozenLake5x5Neg-v1',
+    entry_point='frozen_lake_custom:FrozenLakeCustom',
+    max_episode_steps=400,
+    reward_threshold=0.99,  # optimum = 1
+    kwargs={'desc': MAP5, 'goalr': 1000.0,
+            'fallr': -1000.0, 'stepr': -1.0}
+)
+
+register(
+    id='FrozenLake20x20Neg-v1',
+    entry_point='frozen_lake_custom:FrozenLakeCustom',
+    max_episode_steps=5000,
+    reward_threshold=0.99,  # optimum = 1
+    kwargs={'desc': MAP20, 'goalr': 1000.0, 'fallr': -1000.0, 'stepr': -1.0}
 )
 
 
 @timing
-def policy_iteration(problem, R=None, T=None, gamma=0.99, max_iterations=10**6, delta=10**-3):
+def policy_iteration(problem, R=None, T=None, gamma=0.99, max_iterations=10**7, delta=10**-4):
     """ Runs Policy Iteration on a gym problem.
 
     Args:
@@ -138,21 +162,40 @@ def run_experiment(problem, prefix, gamma, shape=None):
     heatmap = vdf.as_matrix().reshape(shape)
     plot_grid(heatmap, prefix, tdir, policy_for_annot=polgrid)
 
+    return iters
+
 
 def main():
     """Run simulation.
 
     """
-    gammas = [0.001, 0.25, 0.5, 0.75, 0.9, 0.99]
-    shapes = [(8, 8), (50, 50)]
-    shape_map = {(8, 8): 'FrozenLake8x8-v1', (50, 50): 'FrozenLake50x50-v1'}
+
+    
+    gammas = [0.001, 0.25, 0.5, 0.75, 0.9, 0.99, 0.995, 0.999]
+    shapes = [(5, 5), (20, 20)]
+    shape_map = {(5, 5): 'FrozenLake5x5-v1', (20, 20): 'FrozenLake20x20-v1'}
 
     for shape in shapes:
         problem = shape_map[shape]
+
+        iterToConverge = []
         for gamma in gammas:
             prefix = 'fl_pi_{}x{}_{}'.format(shape[0], shape[1], gamma)
-            run_experiment(problem, prefix, gamma, shape)
+            iterToConverge.append(run_experiment(problem, prefix, gamma, shape))
 
+        print(iterToConverge)
+
+    shape_map = {(5, 5): 'FrozenLake5x5Neg-v1', (20, 20): 'FrozenLake20x20Neg-v1'}
+
+    for shape in shapes:
+        problem = shape_map[shape]
+
+        iterToConverge = []
+        for gamma in gammas:
+            prefix = 'fl_pi_{}x{}Neg_{}'.format(shape[0], shape[1], gamma)
+            iterToConverge.append(run_experiment(problem, prefix, gamma, shape))
+
+        print(iterToConverge)
 
 if __name__ == '__main__':
     main()

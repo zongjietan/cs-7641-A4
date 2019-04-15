@@ -12,25 +12,6 @@ DOWN = 1
 RIGHT = 2
 UP = 3
 
-MAPS = {
-    "4x4": [
-        "SFFF",
-        "FHFH",
-        "FFFH",
-        "HFFG"
-    ],
-    "8x8": [
-        "SFFFFFFF",
-        "FFFFFFFF",
-        "FFFHFFFF",
-        "FFFFFHFF",
-        "FFFHFFFF",
-        "FHHFFFHF",
-        "FHFFHFHF",
-        "FFFHFFFG"
-    ],
-}
-
 
 class FrozenLakeCustom(discrete.DiscreteEnv):
     """
@@ -57,7 +38,7 @@ class FrozenLakeCustom(discrete.DiscreteEnv):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4", is_slippery=True, goalr=1.0, fallr=0.0, stepr=0.0):
+    def __init__(self, desc="MAP5", map_name=None, is_slippery=True, goalr=1.0, fallr=0.0, stepr=0.0):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:

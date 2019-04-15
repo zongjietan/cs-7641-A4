@@ -12,96 +12,61 @@ from plot_results import plot_grid
 from gym.envs.registration import register
 
 
-# register custom Frozen Lake 25x25 map
-SIZE = 50
+# register custom Frozen Lake 5x5 map
+SIZE = 5
 MAP_FILE = get_abspath('frozen_lake_{}.txt'.format(SIZE), 'data')
 with open(MAP_FILE) as f:
     MAP_DATA = f.readlines()
-MAP50 = [x.strip() for x in MAP_DATA]
+MAP5 = [x.strip() for x in MAP_DATA]
+
+# register custom Frozen Lake 20x20 map
+SIZE = 20
+MAP_FILE = get_abspath('frozen_lake_{}.txt'.format(SIZE), 'data')
+with open(MAP_FILE) as f:
+    MAP_DATA = f.readlines()
+MAP20 = [x.strip() for x in MAP_DATA]
 
 register(
-    id='FrozenLake8x8-v1',
+    id='FrozenLake5x5-v1',
     entry_point='frozen_lake_custom:FrozenLakeCustom',
-    max_episode_steps=5000,
+    max_episode_steps=400,
     reward_threshold=0.99,  # optimum = 1
-    kwargs={'map_name': '8x8', 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
+    kwargs={'desc': MAP5, 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
 )
 
 register(
-    id='FrozenLake50x50-v1',
+    id='FrozenLake20x20-v1',
     entry_point='frozen_lake_custom:FrozenLakeCustom',
     max_episode_steps=5000,
     reward_threshold=0.99,  # optimum = 1
-    kwargs={'desc': MAP50, 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
+    kwargs={'desc': MAP20, 'goalr': 1.0, 'fallr': 0.0, 'stepr': 0.0}
 )
 
 register(
-    id='FrozenLake8x8Neg-v1',
+    id='FrozenLake5x5Neg-v1',
     entry_point='frozen_lake_custom:FrozenLakeCustom',
-    max_episode_steps=5000,
+    max_episode_steps=400,
     reward_threshold=0.99,  # optimum = 1
-    kwargs={'map_name': '8x8', 'goalr': 1000.0,
+    kwargs={'desc': MAP5, 'goalr': 1000.0,
             'fallr': -1000.0, 'stepr': -1.0}
 )
 
 register(
-    id='FrozenLake50x50Neg-v1',
+    id='FrozenLake20x20Neg-v1',
     entry_point='frozen_lake_custom:FrozenLakeCustom',
     max_episode_steps=5000,
     reward_threshold=0.99,  # optimum = 1
-    kwargs={'desc': MAP50, 'goalr': 1000.0, 'fallr': -1000.0, 'stepr': -1.0}
+    kwargs={'desc': MAP20, 'goalr': 1000.0, 'fallr': -1000.0, 'stepr': -1.0}
 )
 
 
-def d1(e):
-    """Returns harmonic schedule for random action rate decay.
-
-    Args:
-        e (int): Episode number.
-    Returns:
-        d (float): Random action rate.
-
-    """
-    d = 1 / float(e + 1)
-    return d
-
-
-def d2(e, rar=0.99, radr=0.9):
-    """Returns logarithmic decay schedule for random action rate decay.
-
-    Args:
-        e (int): Episode number.
-        rar (float): Random action rate initial value.
-        radr (float): Decay rate.
-    Returns:
-        rar (float): Random action rate.
-
-    """
-    for i in range(0, e + 1):
-        rar *= radr
-    return rar
-
-
-def d3(e):
-    """Returns exponential decay schedule for random action rate decay.
-
-    Args:
-        e (int): Episode number.
-    Returns:
-        d (float): Random action rate.
-
-    """
-    d = float(math.e**(-e * 0.0005))
-    return d
-
-
 @timing
-def q_learning(env, alpha=0.75, decay=d1, gamma=0.99, episodes=5000):
+def q_learning(env, alpha=0.75, decay=0.999, gamma=0.99, episodes=5000):
     """ Runs Q-Learning on a gym problem.
 
     Args:
         env (gym.env): Gym problem object.
-        decay (function): Decay function for random action rate.
+        decay : Epsilon decay rate.
         alpha (float): Learning rate.
         gamma (float): Discount rate.
         episodes (int): Number of episodes.
@@ -117,6 +82,9 @@ def q_learning(env, alpha=0.75, decay=d1, gamma=0.99, episodes=5000):
     max_steps = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
     visits = np.zeros((env.observation_space.n, 1))
 
+    # epsilon initially set to 1.0
+    epsilon = 1.0
+
     # episodes
     for episode in range(episodes):
         # refresh state
@@ -130,10 +98,10 @@ def q_learning(env, alpha=0.75, decay=d1, gamma=0.99, episodes=5000):
                 break
 
             current = state
-            action = np.argmax(Q[current, :] +
-                               np.random.randn(1, env.action_space.n) * decay(episode))
+            action = np.argmax(Q[current, :]) if np.random.random() > epsilon else env.action_space.sample()
+            epsilon *= decay
 
-            state, reward, done, info = env.step(action)
+            state, reward, done, _ = env.step(action)
             visits[state] += 1
             t_reward += reward
             Q[current, action] += alpha * \
@@ -168,7 +136,7 @@ def run_experiment(problem, prefix, alpha, gamma, d, shape=None):
         problem (str): Gym problem name.
         alpha (float): Learning rate.
         gamma (float): Discount factor.
-        d (function): Epsilon decay function.
+        d : Epsilon decay rate.
         shape (tuple(int)): Shape of state space matrix.
         prefix (str): Prefix for CSV and plot outputs.
 
@@ -217,13 +185,16 @@ def main():
     """Run experiments.
 
     """
-    e_decay = [d1, d2, d3]
+    
+    e_decay = [0.99, 0.999, 0.9999, 0.99999, 0.999999]
     alphas = [0.01, 0.25, 0.5, 0.75, 0.99]
     gammas = [0.001, 0.9, 0.99]
-    shapes = [(8, 8), (50, 50)]
+
+    shapes = [(5, 5), (20, 20)]
+
 
     # normal envs
-    shape_map = {(8, 8): 'FrozenLake8x8-v1', (50, 50): 'FrozenLake50x50-v1'}
+    shape_map = {(5, 5): 'FrozenLake5x5-v1', (20, 20): 'FrozenLake20x20-v1'}
 
     # reinitialize summary file
     try:
@@ -241,13 +212,11 @@ def main():
             for alpha in alphas:
                 for d in e_decay:
                     prefix = 'fl_ql_{}x{}_{}_{}_{}'.format(
-                        shape[0], shape[1], gamma, alpha, d.__name__)
+                        shape[0], shape[1], gamma, alpha, d)
                     run_experiment(problem, prefix, alpha, gamma, d, shape)
 
     # negative envs
-    e_decay = [d1, d3]
-    shape_map = {(8, 8): 'FrozenLake8x8Neg-v1',
-                 (50, 50): 'FrozenLake50x50Neg-v1'}
+    shape_map = {(5, 5): 'FrozenLake5x5Neg-v1', (20, 20): 'FrozenLake20x20Neg-v1'}
 
     for shape in shapes:
         problem = shape_map[shape]
@@ -255,7 +224,7 @@ def main():
             for alpha in alphas:
                 for d in e_decay:
                     prefix = 'fl_ql_{}x{}neg_{}_{}_{}'.format(
-                        shape[0], shape[1], gamma, alpha, d.__name__)
+                        shape[0], shape[1], gamma, alpha, d)
                     run_experiment(problem, prefix, alpha, gamma, d, shape)
 
 

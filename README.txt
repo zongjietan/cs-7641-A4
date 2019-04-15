@@ -5,12 +5,13 @@
 ## Requirements
 * Python 3.5 or greater
 * Run 'pip install -r requirements.txt'
-* The 50x50 and 8x8 grid-worlds are pre-generated
+* The 5x5 and 20x20 grid-worlds are pre-generated
 * In the `src` directory run:
-  * Run python3 policy_iteration.py && python3 value_iteration.py
+  * Run python3 policy_iteration.py 
+  * Run python3 value_iteration.py
   * Run python3 q_learning.py
 
-## Code at
+## Source Code at 
 https://github.com/zongjietan/cs-7641-A4.git
 
 ## Thanks to:
